@@ -13,9 +13,6 @@
 *settings.json
 data/redis
 data/*.yml
-data/*.json
-# test files
-test*.*
 # IDEs
 .idea
 .vscode
