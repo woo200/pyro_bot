@@ -1,5 +1,3 @@
-#  Copyright (c) 2019-2023 ThatRedKite and contributors
-
 import random
 import os
 import json
