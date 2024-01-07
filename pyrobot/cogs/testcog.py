@@ -85,7 +85,7 @@ class PyroTestSession:
         audit_chan_id = await self.bot.redis.get(f"pyro_test_audit_chan:{self.ctx.guild.id}")
         if audit_chan_id is not None:
             audit_chan = self.ctx.guild.get_channel(int(audit_chan_id))
-            await audit_chan.send(f"{self.ctx.author.mention} has completed the test: {question['question']}, and {'passed' if not self.failed else 'failed'}.")
+            await audit_chan.send(f"{self.ctx.author.mention} has **{'passed' if not self.failed else 'failed'}** the test w/ question: `{question['question']}`.")
 
         # The user has completed the test
         if not self.failed:
