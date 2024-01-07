@@ -1,0 +1,2 @@
+redis
+py-cord[speed]==2.4.1

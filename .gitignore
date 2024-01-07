@@ -1,0 +1,24 @@
+#media files
+*.webp
+*.jpeg
+*.jpg
+#*.png
+*.mp3
+*.gif
+#other files
+*.pyc
+*.log
+*.out
+#settings file
+*settings.json
+data/redis
+data/*.yml
+data/*.json
+# test files
+test*.*
+# IDEs
+.idea
+.vscode
+src/pcb_mod/build
+as
+__pycache__

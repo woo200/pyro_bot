@@ -1,0 +1,16 @@
+services:
+  pyrobot:
+    build: .
+    links:
+      - redis
+    volumes:
+      - ./pyrobot/:/app/pyrobot
+      - ./data/:/app/data
+    restart: "no"
+    command: bash -c "cd /app/ && /app/venv1/bin/python3 -m pyrobot"
+  redis:
+    container_name: redis
+    volumes:
+      - ./data/redis:/data
+    image: "redis:alpine"
+    entrypoint: redis-server --appendonly yes
