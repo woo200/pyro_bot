@@ -86,6 +86,11 @@ class PyroTestSession:
         if not self.failed:
             await self.bot.redis.sadd(f"pyro_test_completed:{self.ctx.guild.id}", self.ctx.author.id)
             await self.bot.redis.delete(f"pyro_test:{self.ctx.guild.id}:{self.ctx.author.id}")
+            audit_chan_id = await self.bot.redis.get(f"pyro_test_audit_chan:{self.ctx.guild.id}")
+            if audit_chan_id is not None:
+                audit_chan = self.ctx.guild.get_channel(int(audit_chan_id))
+                await audit_chan.send(f"{self.ctx.author.mention} has completed the test: {question['question']}, and {'passed' if not self.failed else 'failed'}.")
+
             role_id = await self.bot.redis.get(f"pyro_test_role:{self.ctx.guild.id}")
             if role_id is not None:
                 role = self.ctx.guild.get_role(int(role_id))
@@ -198,9 +203,19 @@ class TestCog(commands.Cog, name="Pyro Test Cog"):
         await self.redis.srem(f"pyro_test_completed:{ctx.guild.id}", member.id)
         await ctx.respond(f"Successfully reset {member.mention}'s test attempts.")
     
+    @pyrotest.command(
+        name="audit_chan",
+        description="Set the channel where test attempts will be logged",
+    )
+    @has_permissions(administrator=True)
+    async def _audit_chan(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
+        await self.redis.set(f"pyro_test_audit_chan:{ctx.guild.id}", channel.id)
+        await ctx.respond(f"Successfully set the audit channel to {channel.mention}.")
+    
     @_reset.error
     @_maxtries.error
     @_setrole.error
+    @_audit_chan.error
     async def pyrotest_error(self, ctx: discord.ApplicationContext, error):
         if isinstance(error, MissingPermissions):
             await ctx.respond("You do not have permission to use this command.")
