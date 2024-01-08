@@ -152,7 +152,7 @@ class TestCog(commands.Cog, name="Pyro Test Cog"):
         key2 = f"pyro_test_completed:{ctx.guild.id}"
 
         if await self.redis.sismember(key2, ctx.author.id):
-            return await ctx.respond("You have already completed the test.")
+            return await ctx.respond("You have already completed the test.", ephemeral=True)
 
         max_tries = await self.redis.get(f"pyro_test_max_tries:{ctx.guild.id}")
         num_tries = await self.redis.get(key)
@@ -168,9 +168,9 @@ class TestCog(commands.Cog, name="Pyro Test Cog"):
             max_tries = int(max_tries)
         
         if num_tries >= max_tries:
-            return await ctx.respond(f"You have already attempted the test {max_tries} times. Please contact an administrator if you would like to try it again.")
+            return await ctx.respond(f"You have already attempted the test {max_tries} times. Please contact an administrator if you would like to try it again.", ephemeral=True)
         
-        await ctx.respond(f"Please check your DMs for instructions on how to complete the test.")
+        await ctx.respond(f"Please check your DMs for instructions on how to complete the test.", ephemeral=True)
 
         await self.start_test(ctx, num_tries, max_tries)
     
@@ -181,7 +181,7 @@ class TestCog(commands.Cog, name="Pyro Test Cog"):
     @has_permissions(administrator=True)
     async def _setrole(self, ctx: discord.ApplicationContext, role: discord.Role):
         await self.redis.set(f"pyro_test_role:{ctx.guild.id}", role.id)
-        await ctx.respond(f"Successfully set the role to {role.mention}.")
+        await ctx.respond(f"Successfully set the role to {role.mention}.", ephemeral=True)
 
     @pyrotest.command(
         name="maxtries",
@@ -189,7 +189,7 @@ class TestCog(commands.Cog, name="Pyro Test Cog"):
     )
     @has_permissions(administrator=True)
     async def _maxtries(self, ctx: discord.ApplicationContext, num_tries: int):
-        await ctx.respond(f"Successfully set the maximum number of tries to {num_tries}.")
+        await ctx.respond(f"Successfully set the maximum number of tries to {num_tries}.", ephemeral=True)
         await self.redis.set(f"pyro_test_max_tries:{ctx.guild.id}", num_tries)
 
     @pyrotest.command(
@@ -200,7 +200,7 @@ class TestCog(commands.Cog, name="Pyro Test Cog"):
     async def _reset(self, ctx: discord.ApplicationContext, member: discord.Member):
         await self.redis.delete(f"pyro_test:{ctx.guild.id}:{member.id}")
         await self.redis.srem(f"pyro_test_completed:{ctx.guild.id}", member.id)
-        await ctx.respond(f"Successfully reset {member.mention}'s test attempts.")
+        await ctx.respond(f"Successfully reset {member.mention}'s test attempts.", ephemeral=True)
     
     @pyrotest.command(
         name="audit_chan",
@@ -209,12 +209,39 @@ class TestCog(commands.Cog, name="Pyro Test Cog"):
     @has_permissions(administrator=True)
     async def _audit_chan(self, ctx: discord.ApplicationContext, channel: discord.TextChannel):
         await self.redis.set(f"pyro_test_audit_chan:{ctx.guild.id}", channel.id)
-        await ctx.respond(f"Successfully set the audit channel to {channel.mention}.")
+        await ctx.respond(f"Successfully set the audit channel to {channel.mention}.", ephemeral=True)
     
+    @pyrotest.command(
+        name="info",
+        description="See info about a user's test attempts",
+    )
+    @has_permissions(administrator=True)
+    async def _info(self, ctx: discord.ApplicationContext, member: discord.Member):
+        key = f"pyro_test:{ctx.guild.id}:{member.id}"
+        key2 = f"pyro_test_completed:{ctx.guild.id}"
+
+        if await self.redis.sismember(key2, member.id):
+            return await ctx.respond(f"{member.mention} has passed the test.", ephemeral=True)
+
+        max_tries = await self.redis.get(f"pyro_test_max_tries:{ctx.guild.id}")
+        num_tries = await self.redis.get(key)
+        if num_tries is None:
+            num_tries = 0
+        else:
+            num_tries = int(num_tries)
+        
+        if max_tries is None:
+            max_tries = 3
+        else:
+            max_tries = int(max_tries)
+        
+        await ctx.respond(f"{member.mention} has attempted the test {num_tries} time(s) out of {max_tries}.", ephemeral=True)
+
     @_reset.error
     @_maxtries.error
     @_setrole.error
     @_audit_chan.error
+    @_info.error
     async def pyrotest_error(self, ctx: discord.ApplicationContext, error):
         if isinstance(error, MissingPermissions):
             await ctx.respond("You do not have permission to use this command.")
